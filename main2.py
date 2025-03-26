@@ -1,6 +1,7 @@
 import sys
 import subprocess
 import os
+import shutil
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
@@ -14,6 +15,10 @@ if __name__ == "__main__":
     if not os.path.exists(image_path):
         print(f"❌ Erreur : L'image '{image_path}' n'existe pas.")
         exit()
+
+    # Vider l'output
+    if os.path.exists("./output"):
+        shutil.rmtree("./output")
 
     # Récupérer le nom de base sans extension
     filename, ext = os.path.splitext(os.path.basename(image_path))
