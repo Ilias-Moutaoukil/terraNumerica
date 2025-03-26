@@ -2,7 +2,18 @@ import cv2
 import sys
 import os
 
-def pixelate_image(image_path, level):
+if __name__ == "__main__":
+    # Vérifier si les arguments sont donnés
+    if len(sys.argv) < 3:
+        print("Usage: python pixelize.py <chemin_image> <nombre_de_classes>")
+        exit()
+
+    # Récupérer l'image depuis les arguments
+    image_path = sys.argv[1]
+
+    # Récupérer le nombre de classes
+    level = int(sys.argv[2])
+
     # Charger l'image
     image = cv2.imread(image_path)
 
@@ -23,9 +34,6 @@ def pixelate_image(image_path, level):
     # Calculer les nouvelles dimensions (réduction)
     new_width = max(1, int(original_width * scale_factor))
     new_height = max(1, int(original_height * scale_factor))
-
-    # 🔹 Afficher les dimensions de l'image réduite
-    print(f"Image réduite à : {new_width} x {new_height} pixels")
 
     # Redimensionner l'image vers la petite version pixelisée
     small_image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
@@ -50,15 +58,3 @@ def pixelate_image(image_path, level):
     output_pixelized_path = os.path.join(output_dir, f"{filename_without_ext}_pixelized{ext}")
     cv2.imwrite(output_pixelized_path, pixelated_image)
     print(f"Image pixelisée enregistrée sous : {output_pixelized_path}")
-
-# Vérifier si un argument est donné
-if len(sys.argv) < 3:
-    print("Usage: python pixelize.py <chemin_image> <niveau_pixelisation>")
-    exit()
-
-# Récupérer les arguments
-image_path = sys.argv[1]
-level = int(sys.argv[2])
-
-# Appliquer la pixelisation
-pixelate_image(image_path, level)

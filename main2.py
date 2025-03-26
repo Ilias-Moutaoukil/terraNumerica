@@ -1,15 +1,15 @@
 import sys
 import subprocess
-import re
 import os
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: python main.py <chemin_image> <niveau_pixelisation>")
+        print("Usage: python main.py <chemin_image> <nombre_de_classes> [easy]")
         exit()
 
     image_path = sys.argv[1]
     level = sys.argv[2]
+    easy = sys.argv[3] if (len(sys.argv) > 3 and sys.argv[3] == "true") else "false"
 
     if not os.path.exists(image_path):
         print(f"❌ Erreur : L'image '{image_path}' n'existe pas.")
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         exit()
 
     # Exécuter binaryGrid.py sur l'image
-    subprocess.run(["python", "binaryGrid.py", cell_path], check=True)
+    subprocess.run(["python", "binaryGrid.py", cell_path, easy], check=True)
 
     # Vérifier que le dossier est bien créé
     grid_path = os.path.join("output/grid_cells")

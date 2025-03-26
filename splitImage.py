@@ -3,15 +3,26 @@ import sys
 import cv2
 import numpy as np
 
-def split_image(image_path, num_classes):
+if __name__ == "__main__":
+    # Vérifier si les arguments sont donnés
+    if len(sys.argv) < 3:
+        print("Usage: python splitImage.py <chemin_image> <nombre_de_classes>")
+        exit()
+
+    # Récupérer l'image depuis les arguments
+    image_path = sys.argv[1]
+
+    # Récupérer le nombre de classes
+    level = int(sys.argv[2])
+
     output_dir = "output/cells"
-    num_pieces = 60 * num_classes
+    num_pieces = 60 * level
 
     # Charger l'image
     image = cv2.imread(image_path)
     if image is None:
         print("Erreur : Impossible de charger l'image.")
-        return
+        exit()
 
     # Récupérer les dimensions de l'image
     height, width, _ = image.shape
@@ -58,10 +69,3 @@ def split_image(image_path, num_classes):
             count += 1
 
     print(f"{count} sous-images enregistrées dans {output_dir}")
-
-# Récupérer les arguments
-image_path = sys.argv[1]
-num_classes = int(sys.argv[2])
-
-# Diviser l'image
-split_image(image_path, num_classes)
