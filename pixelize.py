@@ -8,7 +8,7 @@ def pixelate_image(image_path, level):
 
     # Vérifier si l'image a été chargée
     if image is None:
-        print(f"❌ Erreur : Impossible de charger l'image à {image_path}")
+        print(f"Erreur : Impossible de charger l'image à {image_path}")
         exit()
 
     # Obtenir les dimensions originales
@@ -25,7 +25,7 @@ def pixelate_image(image_path, level):
     new_height = max(1, int(original_height * scale_factor))
 
     # 🔹 Afficher les dimensions de l'image réduite
-    print(f"📏 Image réduite à : {new_width} x {new_height} pixels")
+    print(f"Image réduite à : {new_width} x {new_height} pixels")
 
     # Redimensionner l'image vers la petite version pixelisée
     small_image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
@@ -44,12 +44,12 @@ def pixelate_image(image_path, level):
     # 🔹 Enregistrer l'image réduite (non upscalée)
     output_small_path = os.path.join(output_dir, f"{filename_without_ext}_pixelized_small{ext}")
     cv2.imwrite(output_small_path, small_image)
-    print(f"✅ Image réduite enregistrée sous : {output_small_path}")
+    print(f"Image réduite enregistrée sous : {output_small_path}")
 
     # 🔹 Enregistrer l'image pixelisée (upscalée)
     output_pixelized_path = os.path.join(output_dir, f"{filename_without_ext}_pixelized{ext}")
     cv2.imwrite(output_pixelized_path, pixelated_image)
-    print(f"✅ Image pixelisée enregistrée sous : {output_pixelized_path}")
+    print(f"Image pixelisée enregistrée sous : {output_pixelized_path}")
 
 # Vérifier si un argument est donné
 if len(sys.argv) < 3:

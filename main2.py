@@ -1,5 +1,6 @@
 import sys
 import subprocess
+import re
 import os
 
 if __name__ == "__main__":
@@ -46,14 +47,24 @@ if __name__ == "__main__":
             print(f"❌ Erreur : L'image noir & blanc '{path}' n'a pas été trouvée.")
             exit()
 
-    print("🔹 Génération de la grille sur l'image réduite en noir et blanc...")
-    subprocess.run(["python", "binaryGrid.py", bw_small_path], check=True)
+    print("🔹 Génération des cellules")
+    subprocess.run(["python", "splitImage.py", bw_small_path, level], check=True)
 
     # Définition du chemin de l'image avec la grille
-    grid_path = os.path.join("output", f"{filename}_pixelized_small_bw_grid{ext}")
+    cell_path = os.path.join("output/cells")
+
+    if not os.path.exists(cell_path):
+        print(f"❌ Erreur : Les cellules n'ont pas été trouvées.")
+        exit()
+
+    # Exécuter binaryGrid.py sur l'image
+    subprocess.run(["python", "binaryGrid.py", cell_path], check=True)
+
+    # Vérifier que le dossier est bien créé
+    grid_path = os.path.join("output/grid_cells")
 
     if not os.path.exists(grid_path):
-        print(f"❌ Erreur : L'image avec grille '{grid_path}' n'a pas été trouvée.")
+        print(f"❌ Erreur : Les images avec grille '{grid_path}' n'ont pas été trouvées.")
         exit()
 
     print(f"✅ Processus terminé !")
@@ -61,4 +72,5 @@ if __name__ == "__main__":
     print(f"📂 Image pixelisée réduite : {pixelized_small_path}")
     print(f"📂 Image noir & blanc pixelisée : {bw_path}")
     print(f"📂 Image noir & blanc réduite : {bw_small_path}")
-    print(f"📂 Image avec grille : {grid_path}")
+    print(f"📂 Image découpé : {cell_path}")
+    print(f"📂 Images avec grille : {grid_path}")
