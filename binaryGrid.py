@@ -78,14 +78,23 @@ def process_image(image_path, output_dir, easy):
                 text_position = (j * cell_size + text_offset_x, i * cell_size + int(text_offset_y))
 
                 # Placer le texte en noir (0) sur fond blanc
-                cv2.putText(grid_image, str(value), text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 0, 1, cv2.LINE_AA)
+                cv2.putText(binary, str(value), text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 0, 1, cv2.LINE_AA)
 
         # Dessiner la grille (lignes noires)
         for i in range(image.shape[0] + 1):
-            cv2.line(binary, (0, i * cell_size), (grid_width, i * cell_size), 0, 1)
+            cv2.line(grid_image, (0, i * cell_size), (grid_width, i * cell_size), 0, 1)
 
         for j in range(image.shape[1] + 1):
-            cv2.line(binary, (j * cell_size, 0), (j * cell_size, grid_height), 0, 1)
+            cv2.line(grid_image, (j * cell_size, 0), (j * cell_size, grid_height), 0, 1)
+
+        start_point = (10, grid_height - 5)
+        end_point = (10, grid_height - 14)
+        color = (0)
+        thickness = 1
+        tipLength = 0.5
+
+        cv2.arrowedLine(grid_image, start_point, end_point, color, thickness, tipLength=tipLength)
+
 
 
     # Sauvegarde sous forme d'image

@@ -1,102 +1,81 @@
-from PIL import Image, ImageOps, ImageDraw, ImageFont, ImageEnhance
-from math import sqrt, ceil
+import sys
+import subprocess
+import os
+import shutil
 
-WIDTH = 84
-HEIGHT = 100
-NW_CELLS = 6
-NH_CELLS = 10
-LINE = "+============================+"
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print("Usage: python main.py <chemin_image> <nombre_de_classes> [easy]")
+        exit()
 
-# 25P = 1H = 10K
+    image_path = sys.argv[1]
+    level = sys.argv[2]
+    easy = sys.argv[3] if (len(sys.argv) > 3 and sys.argv[3] == "true") else "false"
 
-class ImageProcessor:
-    def __init__(self, url):
-        self.xPixelsBefore = None
-        self.image_numerized=None
-        self.yPixelsBefore = None
-        self.nCol = None
-        self.nRow = None
-        self.nColPxl = None
-        self.nRowPxl = None
-        self.xPixels = None
-        self.yPixels = None
+    if not os.path.exists(image_path):
+        print(f"❌ Erreur : L'image '{image_path}' n'existe pas.")
+        exit()
 
-        try:
-            image = Image.open(url)
-            try:
-                bg = Image.new("RGB", image.size, (255, 255, 255))
-                bg.paste(image, image)
-                self.image = bg
-            except:
-                self.image = image.convert('RGB')
-        except:
-            print("URL is not valid, cannot import this")
+    # Vider l'output
+    if os.path.exists("./output"):
+        shutil.rmtree("./output")
 
-    def resize_image(self):
-        resized_image = self.image.resize((self.xPixelsBefore,self.yPixelsBefore))
-        self.image = Image.new("RGB", (self.xPixels, self.yPixels), (255,255,255))
-        self.image.paste(resized_image, ((self.xPixels-self.xPixelsBefore)//2,(self.yPixels-self.yPixelsBefore)//2))
+    # Récupérer le nom de base sans extension
+    filename, ext = os.path.splitext(os.path.basename(image_path))
 
-    def get_image_soluce(self):
-        new_img = Image.new('RGB', self.image.size, (255, 255, 255))
+    print("🔹 Pixelisation de l'image...")
+    subprocess.run(["python", "pixelize.py", image_path, level], check=True)
 
-        for x in range(self.image.size[0]):
-            for y in range(self.image.size[1]):
-                pixel = self.image.getpixel((x, y))
-                if pixel < 127:
-                    new_img.putpixel((x, y), (0, 0, 0))
-        return new_img
+    # Définition des chemins des fichiers générés par pixelize.py
+    pixelized_path = os.path.join("output", f"{filename}_pixelized{ext}")
+    pixelized_small_path = os.path.join("output", f"{filename}_pixelized_small{ext}")
 
-    def process_image_numerized(self):
-        enhancer = ImageEnhance.Contrast(self.image)
-        contrasted = enhancer.enhance(10.0)
-        self.image = ImageOps.grayscale(contrasted)
-        N = 20
-        new_img = Image.new('RGB', (self.image.size[0] * N, self.image.size[1] * N + 3), (255, 255, 255))
-        font = ImageFont.truetype("C:\Windows\Fonts\Verdanab.ttf", 17)
-        draw = ImageDraw.Draw(new_img)
+    # Vérification que les fichiers existent bien
+    for path in [pixelized_path, pixelized_small_path]:
+        if not os.path.exists(path):
+            print(f"❌ Erreur : L'image pixelisée '{path}' n'a pas été trouvée.")
+            exit()
 
-        for x in range(self.image.size[0]):
-            for y in range(self.image.size[1]):
-                pixel = self.image.getpixel((x, y))
-                if pixel < 127:
-                    draw.text((x * N, y * N), "0", (0, 0, 0), font=font)
-                else:
-                    draw.text((x * N, y * N), "1", (0, 0, 0), font=font)
-        self.image_numerized = new_img
+    print("🔹 Conversion des images en noir et blanc...")
 
-    def get_cropped_image(self):
-        draw = ImageDraw.Draw(self.image_numerized)
-        for i in range(1, self.nCol):
-            draw.line([(i * self.nColPxl - 2, 0), (i * self.nColPxl - 2, self.image_numerized.size[1] - 1)], fill="black", width=2)
-        for i in range(1, self.nRow):
-            draw.line([(0, i * self.nRowPxl + 2), (self.image_numerized.size[0] - 1, i * self.nRowPxl + 2)], fill="black", width=2)
-        return self.image_numerized
+    # Appliquer la conversion noir et blanc aux deux versions
+    subprocess.run(["python", "colorToBlackWhite.py", pixelized_path], check=True)
+    subprocess.run(["python", "colorToBlackWhite.py", pixelized_small_path], check=True)
 
-    def process_image_dim(self, nbCells, nbPixels):
-        ratio = self.image.size[0] / self.image.size[1]
-        cols_approx = sqrt(nbCells) * ratio
-        k = sqrt(nbPixels/self.image.size[0]*self.image.size[1])
-        self.xPixelsBefore = round(self.image.size[0]*k)
-        self.yPixelsBefore = round(self.image.size[1]*k)
-        self.nCol = round(cols_approx)
-        self.nRow = round(nbCells / self.nCol)
-        self.nColPxl = ceil(self.image.size[0] / self.nCol)
-        self.nRowPxl = ceil(self.image.size[1] / self.nRow)
-        self.xPixels = self.image.size[0] - (self.nColPxl * self.nCol)
-        self.yPixels = self.image.size[1] - (self.nRowPxl * self.nRow)
+    # Définition des chemins des fichiers noir et blanc
+    bw_path = os.path.join("output", f"{filename}_pixelized_bw{ext}")
+    bw_small_path = os.path.join("output", f"{filename}_pixelized_small_bw{ext}")
 
-# Charger l'image
-imgProcess = ImageProcessor("panda.png")
-print("Image loaded")
-imgProcess.process_image_dim(60,8400)
-print("Dims calculated")
-print(imgProcess.xPixelsBefore)
-print(imgProcess.yPixelsBefore)
-imgProcess.resize_image()
-print("Resize Image")
-imgProcess.process_image_numerized()
-print("Image wit numbers generated")
-imgProcess.get_cropped_image().save("numerized.png")
-print("soluce")
-imgProcess.get_image_soluce().save("soluce.png")
+    # Vérification que les fichiers noir et blanc ont bien été créés
+    for path in [bw_path, bw_small_path]:
+        if not os.path.exists(path):
+            print(f"❌ Erreur : L'image noir & blanc '{path}' n'a pas été trouvée.")
+            exit()
+
+    print("🔹 Génération des cellules")
+    subprocess.run(["python", "splitImage.py", bw_small_path, level], check=True)
+
+    # Définition du chemin de l'image avec la grille
+    cell_path = os.path.join("output/cells")
+
+    if not os.path.exists(cell_path):
+        print(f"❌ Erreur : Les cellules n'ont pas été trouvées.")
+        exit()
+
+    # Exécuter binaryGrid.py sur l'image
+    subprocess.run(["python", "binaryGrid.py", cell_path, easy], check=True)
+
+    # Vérifier que le dossier est bien créé
+    grid_path = os.path.join("output/grid_cells")
+
+    if not os.path.exists(grid_path):
+        print(f"❌ Erreur : Les images avec grille '{grid_path}' n'ont pas été trouvées.")
+        exit()
+
+    print(f"✅ Processus terminé !")
+    print(f"📂 Image pixelisée : {pixelized_path}")
+    print(f"📂 Image pixelisée réduite : {pixelized_small_path}")
+    print(f"📂 Image noir & blanc pixelisée : {bw_path}")
+    print(f"📂 Image noir & blanc réduite : {bw_small_path}")
+    print(f"📂 Image découpé : {cell_path}")
+    print(f"📂 Images avec grille : {grid_path}")
