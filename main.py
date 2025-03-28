@@ -2,6 +2,12 @@ import sys
 import subprocess
 import os
 import shutil
+from PIL import Image
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
@@ -71,6 +77,86 @@ if __name__ == "__main__":
     if not os.path.exists(grid_path):
         print(f"❌ Erreur : Les images avec grille '{grid_path}' n'ont pas été trouvées.")
         exit()
+
+    output_pdf = "output/output.pdf"
+    images_folder = grid_path  # Ton dossier d’images
+    logo_path = "ressources/logo.png"  # Logo en haut
+    pdfmetrics.registerFont(TTFont("DejaVu", "ressources/DejaVuSans.ttf"))
+    page_width, page_height = A4
+    margin = 50  # Marge haute et basse réduite
+
+    # Taille max de l'image principale (légèrement réduite)
+    max_img_width = page_width - 2 * margin
+    max_img_height = page_height - 350  # Plus de place pour logo + texte
+
+    # Logo dimensions
+    logo_height = 60
+
+    # Texte à insérer sous le logo
+    text_lines = [
+        "Agent secret, votre mission commence maintenant !",
+        " ",
+        "Une organisation mystérieuse vous a envoyé un message codé…",
+        "Pour le déchiffrer, suivez les instructions :",
+        " ",
+        "■ Coloriez en noir les cases marquées avec un 1",
+        "□ Laissez vides celles marquées avec un 0",
+        " ",
+        "Une fois toutes les cases coloriées, un message secret apparaîtra !",
+        " ",
+        "Saurez-vous découvrir ce qui se cache derrière cette énigme informatique?"
+    ]
+
+    # Récupération des images
+    image_files = sorted([
+        f for f in os.listdir(images_folder)
+        if f.lower().endswith('binary.png')
+    ])
+
+    # Création du PDF
+    c = canvas.Canvas(output_pdf, pagesize=A4)
+
+    for page_num, image_name in enumerate(image_files, start=1):
+        image_path = os.path.join(images_folder, image_name)
+
+        y_cursor = page_height - margin  # On commence depuis le haut
+
+        # Logo
+        if os.path.exists(logo_path):
+            logo_img = Image.open(logo_path)
+            logo_ratio = logo_img.width / logo_img.height
+            logo_width = logo_height * logo_ratio
+            c.drawImage(logo_path, (page_width - logo_width) / 2, y_cursor - logo_height, width=logo_width,
+                        height=logo_height)
+            y_cursor -= logo_height + 60  # espace vide sous le logo
+
+        # Texte
+        c.setFont("DejaVu", 12)
+        line_height = 16
+        for line in text_lines:
+            c.drawCentredString(page_width / 2, y_cursor, line)
+            y_cursor -= line_height
+        y_cursor -= 60  # espace après le texte
+
+        # Image principale
+        img = Image.open(image_path)
+        img_width, img_height = img.size
+        ratio = min(max_img_width / img_width, max_img_height / img_height)
+        new_width = img_width * ratio * 0.8
+        new_height = img_height * ratio * 0.8
+
+        x = (page_width - new_width) / 2
+        y = y_cursor - new_height
+        c.drawImage(image_path, x, y, width=new_width, height=new_height)
+
+        # Numéro de page en bas
+        c.setFont("Helvetica", 12)
+        c.drawCentredString(page_width / 2, margin / 2, f"Page {page_num}")
+
+        c.showPage()
+
+    c.save()
+    print("✅ PDF généré :", output_pdf)
 
     print(f"✅ Processus terminé !")
     print(f"📂 Image pixelisée : {pixelized_path}")

@@ -43,8 +43,8 @@ def process_image(image_path, output_dir, easy):
     grid_width = image.shape[1] * cell_size
 
     # Créer une image blanche pour la grille
-    grid_image = np.ones((grid_height, grid_width), dtype=np.uint8) * 255  # Image en niveaux de gris
-    if not easy: binary = np.ones((grid_height, grid_width), dtype=np.uint8) * 255
+    binary = np.ones((grid_height, grid_width), dtype=np.uint8) * 255  # Image en niveaux de gris
+    if not easy: grid_image = np.ones((grid_height, grid_width), dtype=np.uint8) * 255
 
     # Ajustement pour centrer le texte (légèrement décalé en bas à gauche)
     text_offset_x = cell_size // 5  # Décalage vers la gauche
@@ -60,14 +60,14 @@ def process_image(image_path, output_dir, easy):
                 text_position = (j * cell_size + text_offset_x, i * cell_size + int(text_offset_y))
 
                 # Placer le texte en noir (0) sur fond blanc
-                cv2.putText(grid_image, str(value), text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 0, 1, cv2.LINE_AA)
+                cv2.putText(binary, str(value), text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 0, 1, cv2.LINE_AA)
 
         # Dessiner la grille (lignes noires)
         for i in range(image.shape[0] + 1):
-            cv2.line(grid_image, (0, i * cell_size), (grid_width, i * cell_size), 0, 1)
+            cv2.line(binary, (0, i * cell_size), (grid_width, i * cell_size), 0, 1)
 
         for j in range(image.shape[1] + 1):
-            cv2.line(grid_image, (j * cell_size, 0), (j * cell_size, grid_height), 0, 1)
+            cv2.line(binary, (j * cell_size, 0), (j * cell_size, grid_height), 0, 1)
     else:
         # Ajouter la grille et les nombres
         for i in range(image.shape[0]):
