@@ -90,6 +90,7 @@ def process_image(image_path, output_dir, easy):
         for j in range(image.shape[1] + 1):
             x = j * cell_size
             cv2.line(grid_image, (x, 0), (x, grid_height-1), 0, 1)
+
         start_point = (10, grid_height - 5)
         end_point = (10, grid_height - 14)
         color = (0)
@@ -103,10 +104,15 @@ def process_image(image_path, output_dir, easy):
     # Sauvegarde sous forme d'image
     filename, ext = os.path.splitext(os.path.basename(image_path))
     output_path = os.path.join(output_dir, f"{filename}_grid{ext}")
-    if not easy: binary_output_path = os.path.join(output_dir, f"{filename}_binary{ext}")
 
-    cv2.imwrite(output_path, grid_image)
-    if not easy: cv2.imwrite(binary_output_path, binary)
+    if easy:
+        # En mode easy, seule l'image "binary" est utilisée
+        cv2.imwrite(output_path, binary)
+    else:
+        # En mode non-easy, on a créé "grid_image" et on sauvegarde également "binary"
+        binary_output_path = os.path.join(output_dir, f"{filename}_binary{ext}")
+        cv2.imwrite(output_path, grid_image)
+        cv2.imwrite(binary_output_path, binary)
 
 # Vérifier si le chemin est un fichier ou un dossier
 if os.path.isfile(input_path):
@@ -114,8 +120,6 @@ if os.path.isfile(input_path):
     process_image(input_path, output_dir,easy)
 elif os.path.isdir(input_path):
     # Appliquer la méthode sur toutes les images du dossier
-    print(f"📂 Traitement de toutes les images dans le dossier : {input_path}")
-
     for file in os.listdir(input_path):
         if file.lower().endswith(('.png', '.jpg', '.jpeg')):
             file_path = os.path.join(input_path, file)

@@ -68,4 +68,4 @@ if __name__ == "__main__":
             cv2.imwrite(output_path, padded_cell)
             count += 1
 
-    print(f"{count} sous-images enregistrées dans {output_dir}")
+    print(f"✅ Grille générée : {rows} lignes x {cols} colonnes ({rows * cols} cellules)")

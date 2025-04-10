@@ -52,9 +52,7 @@ if __name__ == "__main__":
     # 🔹 Enregistrer l'image réduite (non upscalée)
     output_small_path = os.path.join(output_dir, f"{filename_without_ext}_pixelized_small{ext}")
     cv2.imwrite(output_small_path, small_image)
-    print(f"Image réduite enregistrée sous : {output_small_path}")
 
     # 🔹 Enregistrer l'image pixelisée (upscalée)
     output_pixelized_path = os.path.join(output_dir, f"{filename_without_ext}_pixelized{ext}")
     cv2.imwrite(output_pixelized_path, pixelated_image)
-    print(f"Image pixelisée enregistrée sous : {output_pixelized_path}")
