@@ -39,8 +39,8 @@ def process_image(image_path, output_dir, easy):
     cell_size = 20  # Taille des cases
 
     # Dimensions de l'image finale
-    grid_height = image.shape[0] * cell_size
-    grid_width = image.shape[1] * cell_size
+    grid_height = image.shape[0] * cell_size + 1
+    grid_width = image.shape[1] * cell_size + 1
 
     # Créer une image blanche pour la grille
     binary = np.ones((grid_height, grid_width), dtype=np.uint8) * 255  # Image en niveaux de gris
@@ -64,10 +64,12 @@ def process_image(image_path, output_dir, easy):
 
         # Dessiner la grille (lignes noires)
         for i in range(image.shape[0] + 1):
-            cv2.line(binary, (0, i * cell_size), (grid_width, i * cell_size), 0, 1)
+            y = i * cell_size
+            cv2.line(binary, (0, y), (grid_width-1, y), 0, 1)
 
         for j in range(image.shape[1] + 1):
-            cv2.line(binary, (j * cell_size, 0), (j * cell_size, grid_height), 0, 1)
+            x = j * cell_size
+            cv2.line(binary, (x, 0), (x, grid_height-1), 0, 1)
     else:
         # Ajouter la grille et les nombres
         for i in range(image.shape[0]):
@@ -82,11 +84,12 @@ def process_image(image_path, output_dir, easy):
 
         # Dessiner la grille (lignes noires)
         for i in range(image.shape[0] + 1):
-            cv2.line(grid_image, (0, i * cell_size), (grid_width, i * cell_size), 0, 1)
+            y = i * cell_size
+            cv2.line(grid_image, (0, y), (grid_width-1, y), 0, 1)
 
         for j in range(image.shape[1] + 1):
-            cv2.line(grid_image, (j * cell_size, 0), (j * cell_size, grid_height), 0, 1)
-
+            x = j * cell_size
+            cv2.line(grid_image, (x, 0), (x, grid_height-1), 0, 1)
         start_point = (10, grid_height - 5)
         end_point = (10, grid_height - 14)
         color = (0)
