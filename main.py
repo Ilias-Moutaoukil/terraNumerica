@@ -21,12 +21,46 @@ if __name__ == "__main__":
         print(f"❌ Erreur : L'image '{image_path}' n'existe pas.")
         exit()
 
-    # Vider le dossier output
+    # Créer un dossier output vide pour centraliser les fichiers de travail
     if os.path.exists("./output"):
         shutil.rmtree("./output")
+    os.makedirs("output", exist_ok=True)
 
-    # Récupérer le nom de base sans extension
+    # Récupérer le nom de base et l'extension de l'image d'entrée
     filename, ext = os.path.splitext(os.path.basename(image_path))
+
+    # Pour un JPG/JPEG, on convertit en PNG et on enregistre dans output
+    if ext.lower() in ['.jpg', '.jpeg']:
+        print("🔹 Conversion de l'image (JPG/JPEG -> PNG)...")
+        img = Image.open(image_path)
+        new_image_path = os.path.join("output", f"{filename}.png")
+        img.save(new_image_path, "PNG")
+        image_path = new_image_path  # Mise à jour du chemin pour la suite
+        filename, ext = os.path.splitext(os.path.basename(image_path))
+    # Pour un PNG, on vérifie la présence d'une transparence
+    elif ext.lower() == '.png':
+        img = Image.open(image_path)
+        if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+            print("🔹 L'image PNG a un fond transparent, remplacement par un fond blanc...")
+            # Créer une nouvelle image RGB avec un fond blanc
+            background = Image.new("RGB", img.size, (255, 255, 255))
+            if img.mode == "RGBA":
+                alpha_channel = img.split()[3]
+            elif img.mode == "LA":
+                alpha_channel = img.split()[1]
+            elif img.mode == "P" and "transparency" in img.info:
+                img = img.convert("RGBA")
+                alpha_channel = img.split()[3]
+            background.paste(img, mask=alpha_channel)
+            new_image_path = os.path.join("output", f"{filename}_whitebg.png")
+            background.save(new_image_path, "PNG")
+            image_path = new_image_path
+            filename, ext = os.path.splitext(os.path.basename(image_path))
+        else:
+            print("🔹 L'image PNG n'a pas de transparence, copie dans output...")
+            new_image_path = os.path.join("output", os.path.basename(image_path))
+            img.save(new_image_path)
+            image_path = new_image_path
 
     print("🔹 Pixelisation de l'image...")
     subprocess.run(["python", "pixelize.py", image_path, level], check=True)
@@ -60,14 +94,14 @@ if __name__ == "__main__":
     print("🔹 Génération des cellules")
     subprocess.run(["python", "splitImage.py", bw_small_path, level], check=True)
 
-    # Définition du chemin de l'image avec la grille
+    # Définition du chemin des images avec grille
     cell_path = os.path.join("output/cells")
 
     if not os.path.exists(cell_path):
         print(f"❌ Erreur : Les cellules n'ont pas été trouvées.")
         exit()
 
-    # Exécuter binaryGrid.py sur l'image
+    # Exécuter binaryGrid.py sur les images des cellules
     subprocess.run(["python", "binaryGrid.py", cell_path, "true" if easy else "false"], check=True)
 
     if not os.path.exists(cell_path):
@@ -122,15 +156,15 @@ if __name__ == "__main__":
 
         for page_num, image_name in enumerate(binary_image_files, start=1):
             image_path_full = os.path.join(images_folder, image_name)
-            y_cursor = page_height - margin  # Commencer depuis le haut de la page
+            y_cursor = page_height - margin  # Positionnement depuis le haut de la page
 
             # Logo
             if os.path.exists(logo_path):
                 logo_img = Image.open(logo_path)
                 logo_ratio = logo_img.width / logo_img.height
                 logo_width = logo_height * logo_ratio
-                c.drawImage(logo_path, (page_width - logo_width) / 2, y_cursor - logo_height, width=logo_width,
-                            height=logo_height)
+                c.drawImage(logo_path, (page_width - logo_width) / 2, y_cursor - logo_height,
+                            width=logo_width, height=logo_height)
                 y_cursor -= logo_height + 60  # Espace après le logo
 
             # Texte
@@ -155,7 +189,8 @@ if __name__ == "__main__":
             # Numéro de page en bas
             c.setFont("Helvetica", 12)
             c.drawCentredString(page_width / 2, margin / 2, f"Page {page_num}")
-            c.drawCentredString(page_width / 2, margin / 2 + 14, f"(Pensez à reporter le numéro de page au dos de votre grille)")
+            c.drawCentredString(page_width / 2, margin / 2 + 14,
+                                f"(Pensez à reporter le numéro de page au dos de votre grille)")
 
             c.showPage()
 
@@ -166,7 +201,6 @@ if __name__ == "__main__":
     # Deuxième partie : Génération d'un second PDF avec 6 images par page,
     # disposées en 2 colonnes et 3 lignes, avec un espace entre chaque image.
     #########################################################################
-    # Récupérer les images se terminant par grid.png
     grid_image_files = sorted([
         f for f in os.listdir(images_folder)
         if f.lower().endswith('grid.png')
@@ -178,37 +212,26 @@ if __name__ == "__main__":
         output_pdf_grid = "output/grid_images.pdf"
         c_grid = canvas.Canvas(output_pdf_grid, pagesize=A4)
 
-        # Nouvelle organisation : 2 colonnes et 3 lignes (6 images par page)
+        # Organisation en 2 colonnes et 3 lignes (6 images par page)
         num_columns = 2
         num_rows = 3
 
-        # Définir un espacement interne (padding) dans chaque cellule
-        #padding = 10  # en points
-
-        # Calculer la taille de chaque cellule en fonction de la marge
         cell_width = (page_width - 2 * margin) / num_columns
         cell_height = (page_height - 2 * margin) / num_rows
 
         for i, image_name in enumerate(grid_image_files):
-            # À chaque 6 images, on démarre une nouvelle page
             if i % 6 == 0 and i > 0:
                 c_grid.showPage()
 
             idx_in_page = i % 6
-            # Pour 2 colonnes :
-            # - Le premier et le deuxième élément de chaque ligne sont respectivement à la colonne 0 et 1
-            # - Le row index est déterminé par la division entière de l'indice par 2
             col_idx = idx_in_page % num_columns
             row_idx = idx_in_page // num_columns
 
-            # Calcul de la position de la cellule
             x_cell = margin + col_idx * cell_width
-            # La coordonnée y : on part du haut de la page (page_height - margin) et on descend d'une cellule complète pour chaque row.
             cell_bottom_y = page_height - margin - (row_idx + 1) * cell_height
 
-            # L'espace utile dans la cellule après application du padding
-            available_width = cell_width - 2 #* padding
-            available_height = cell_height - 2 #* padding
+            available_width = cell_width - 2
+            available_height = cell_height - 2
 
             image_path_grid = os.path.join(images_folder, image_name)
             try:
@@ -218,14 +241,12 @@ if __name__ == "__main__":
                 print(f"❌ Erreur lors de l'ouverture de l'image {image_path_grid}: {e}")
                 continue
 
-            # Calculer le facteur d'échelle pour que l'image tienne dans la zone disponible
             scale = min(available_width / img_width, available_height / img_height)
             new_img_width = img_width * scale
             new_img_height = img_height * scale
 
-            # Centrer l'image dans la zone de la cellule, en tenant compte du padding
-            x_img = x_cell + (available_width - new_img_width) / 2 #+ padding
-            y_img = cell_bottom_y + (available_height - new_img_height) / 2 #+ padding
+            x_img = x_cell + (available_width - new_img_width) / 2
+            y_img = cell_bottom_y + (available_height - new_img_height) / 2
 
             c_grid.drawImage(image_path_grid, x_img, y_img, width=new_img_width, height=new_img_height)
 
