@@ -2,6 +2,7 @@ import sys
 import subprocess
 import os
 import shutil
+import re
 from PIL import Image
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
@@ -142,19 +143,23 @@ if __name__ == "__main__":
         ]
 
         # Récupération des images se terminant par binary.png
-        binary_image_files = sorted([
-            f for f in os.listdir(images_folder)
-            if f.lower().endswith('binary.png')
-        ])
+        binary_image_mapping = {}
+        for f in os.listdir(images_folder):
+            m = re.match(r'cell_(\d+)_binary\.png$', f, re.IGNORECASE)
+            if m:
+                page_num = int(m.group(1))
+                binary_image_mapping[page_num] = f
 
-        if not binary_image_files:
+        if not binary_image_mapping:
             print("⚠️ Aucune image se terminant par 'binary.png' n'a été trouvée pour le second PDF.")
             exit()
 
         # Création du PDF
         c = canvas.Canvas(output_pdf, pagesize=A4)
 
-        for page_num, image_name in enumerate(binary_image_files, start=1):
+        # Parcourir les numéros de page dans l'ordre croissant
+        for page in sorted(binary_image_mapping.keys()):
+            image_name = binary_image_mapping[page]
             image_path_full = os.path.join(images_folder, image_name)
             y_cursor = page_height - margin  # Positionnement depuis le haut de la page
 
@@ -186,9 +191,9 @@ if __name__ == "__main__":
             y = y_cursor - new_height
             c.drawImage(image_path_full, x, y, width=new_width, height=new_height)
 
-            # Numéro de page en bas
+            # Numéro de page en bas (utilisation du numéro extrait)
             c.setFont("Helvetica", 12)
-            c.drawCentredString(page_width / 2, margin / 2, f"Page {page_num}")
+            c.drawCentredString(page_width / 2, margin / 2, f"Page {page}")
             c.drawCentredString(page_width / 2, margin / 2 + 14,
                                 f"(Pensez à reporter le numéro de page au dos de votre grille)")
 
